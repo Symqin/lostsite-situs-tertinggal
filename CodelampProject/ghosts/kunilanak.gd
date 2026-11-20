@@ -3,13 +3,16 @@ class_name Kuntilanak
 
 const SCREAM_RANGE: float = 280.0
 const SCREAM_FEAR_DAMAGE: float = 25.0
+const SCREAM_STUN_DURATION: float = 5.0
+const ABILITY_FIRST_COOLDOWN: float = 20.0
+const ABILITY_COOLDOWN: float = 180.0
 
 func _ready() -> void:
 	name = "kuntilanak"
 	ability_name = "Dreadful Scream"
-	ability_start_cooldown = 20.0
-	ability_cooldown = 180.0
-	ability_duration = 5.0
+	ability_start_cooldown = ABILITY_FIRST_COOLDOWN
+	ability_cooldown = ABILITY_COOLDOWN
+	ability_duration = SCREAM_STUN_DURATION
 	super._ready()
 	print("%s, %s, %s, %s, %s" % [fear_damage, attack_rate, cost, cost_upgrade, cost_move])
 	anim_sprite.play("idle")

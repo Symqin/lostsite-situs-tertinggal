@@ -46,6 +46,7 @@ func _on_button_unhovered() -> void:
 func _on_button_pressed() -> void:
 	AudioManager.playsfx_click()
 	if action_id.to_lower() == "new_game":
+		GameManager.reset()
 		get_tree().change_scene_to_file("res://main.tscn")
 	if action_id.to_lower() == "settings":
 		SignalHub.emit_show_settings()

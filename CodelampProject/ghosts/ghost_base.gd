@@ -3,13 +3,15 @@ class_name GhostBase
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @export var id: String
-@export var fear_damage: float #Ghost Damage
+@export var fear_damage: float #Ghost base damage (never modified at runtime, see get_effective_damage)
 @export var attack_rate: float #Time between attacks
 @export var cost: int
 @export var cost_upgrade: int
 @export var cost_move: int
 @export var attack_range: float = 180.0
 @onready var placement_area_detector: Area2D = $PlacementAreaDetector
+
+const RANGE_COLOR := Color(0.62, 0.85, 1.0) # spirit blue, matches PlacementHints
 
 var dragging : bool = false
 var drag_offset: Vector2 = Vector2.ZERO
@@ -30,35 +32,45 @@ var ability_duration: float = 0.0
 var ability_current_cooldown: float = 0.0
 var _ability_has_been_used: bool = false
 
-# Additional Variables for Room Buff
-var original_fear_damage: float = 0.0
-var is_buffed: bool = false
+# Damage modifiers. Stacked separately so buffs from different sources
+# (room lamp, Tuyul steal) can expire independently without clobbering each other.
+var _damage_multipliers: Array[float] = []
+var _flat_damage_bonus: float = 0.0
+var is_buffed: bool:
+	get: return not _damage_multipliers.is_empty()
+
+var _hovered: bool = false
 
 func _ready():
 	add_to_group("ghost")
 	#Set original position
 	original_position = global_position
-	original_fear_damage = fear_damage
 	last_valid_position = global_position
 	placement_area_detector.area_entered.connect(_on_area_entered)
 	placement_area_detector.area_exited.connect(_on_area_exited)
-	
+	mouse_entered.connect(func(): _hovered = true; queue_redraw())
+	mouse_exited.connect(func(): _hovered = false; queue_redraw())
+
 func _process(delta: float) -> void:
 	#Move position with mouse if dragging
 	if dragging:
 		z_index = 1
-		global_position = get_global_mouse_position() + drag_offset
-		# Change Color if can place/not
-		if can_place:
-			modulate = Color.GREEN
-		else:
-			modulate = Color.RED
+		var desired := get_global_mouse_position() + drag_offset
+		# Snap onto the nearest free placement spot so dropping is forgiving
+		var hints := get_tree().get_first_node_in_group("placement_hints") as PlacementHints
+		var snap := hints.find_snap(desired, self) if hints else {}
+		global_position = snap.position if not snap.is_empty() else desired
+		_refresh_can_place()
+		# Placeable: normal look. Not placeable: faded, slightly red "ghost of a ghost"
+		modulate = Color.WHITE if can_place else Color(1.0, 0.6, 0.6, 0.55)
+		queue_redraw()
 		if Input.is_action_just_released("click"):
 			dragging = false
 			place_ghost()
-	else:
-		z_index = 0
-	
+			queue_redraw()
+		return
+	z_index = 0
+
 	if is_placed:
 		if ability_current_cooldown > 0.0:
 			ability_current_cooldown = max(ability_current_cooldown - delta, 0.0)
@@ -71,20 +83,20 @@ func _process(delta: float) -> void:
 			modulate = Color(1.0, 0.5, 0.5) # Red (Room Buff)
 		else:
 			modulate = Color.WHITE # Normal
-			
+
 		# --- ATTACK & TRACKING SYSTEM ---
 		if attack_cooldown > 0.0:
 			attack_cooldown -= delta
-			
+
 		var target := _find_target_in_range()
-		
+
 		if target:
 			#Rotate
 			look_at(target.global_position)
-			rotation_degrees -= 90 
+			rotation_degrees -= 90
 			#attack
 			if attack_cooldown <= 0.0:
-				target.take_fear_damage(fear_damage, id)
+				target.take_fear_damage(roundi(get_effective_damage()), id)
 				attack_cooldown = attack_rate
 				_play_attack_animation()
 		else:
@@ -93,6 +105,15 @@ func _process(delta: float) -> void:
 				anim_sprite.stop()
 				anim_sprite.play("idle")
 
+# Attack range preview: shown when the dragged ghost sits on a valid spot,
+# or when hovering a placed ghost. Thin outline only, so the map stays readable.
+func _draw() -> void:
+	var show_range := (dragging and can_place) or (_hovered and is_placed and not dragging)
+	if not show_range:
+		return
+	var radius := attack_range / maxf(absf(global_scale.x), 0.001)
+	draw_circle(Vector2.ZERO, radius, Color(RANGE_COLOR, 0.06))
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 96, Color(RANGE_COLOR, 0.45), 1.5, true)
 
 # Allow ghost to be dragged again after placing
 func _input_event(viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
@@ -100,26 +121,28 @@ func _input_event(viewport: Viewport, event: InputEvent, _shape_idx: int) -> voi
 	if not viewport.is_input_handled() and event.is_action_pressed("click"):
 		dragging = true
 		drag_offset = global_position - get_global_mouse_position()
-	
-#func _unhandled_input(event: InputEvent) -> void:
-	##Stop Dragging
-	#if dragging and event.is_action_released("click"):
-		#dragging = false
-		#place_ghost()
+		rotation = 0.0
 
 #Tries to place ghost
 func place_ghost() -> void:
+	_refresh_can_place()
 	if !can_place:
 		if is_placed:
 			global_position = last_valid_position
 		else:
 			queue_free()
 		return
+	var main_node := get_tree().current_scene
 	if not is_placed:
-		var main_node := get_tree().current_scene
 		if main_node and main_node.has_method("try_spend_terror_energy"):
 			if not main_node.try_spend_terror_energy(cost):
 				queue_free()
+				return
+	elif global_position.distance_to(last_valid_position) > 1.0:
+		# Moving an already placed ghost costs cost_move.
+		if main_node and main_node.has_method("try_spend_terror_energy"):
+			if not main_node.try_spend_terror_energy(cost_move):
+				global_position = last_valid_position
 				return
 	is_placed = true
 	anim_sprite.play("idle")
@@ -132,28 +155,34 @@ func _find_target_in_range() -> EnemyBase:
 	for node in get_tree().get_nodes_in_group("enemy"):
 		if node is EnemyBase:
 			var enemy := node as EnemyBase
+			if enemy.is_fleeing:
+				continue
 			var distance := global_position.distance_to(enemy.global_position)
 			if distance <= attack_range and distance < nearest_distance:
 				nearest = enemy
 				nearest_distance = distance
 	return nearest
 
-func _on_area_entered(area: Area2D) -> void:
-	print("test")
-	if area is GhostBase and area.in_placement_area:
-		overlapping_ghost = true
-	if area.is_in_group("placement_area"):
-		in_placement_area = true
-	print("OG: %s, INPA: %s" % [overlapping_ghost, in_placement_area])
+# Recomputes placement validity from what the detector currently overlaps,
+# so several ghosts entering/leaving can't leave stale flags behind.
+func _refresh_can_place() -> void:
+	in_placement_area = false
+	overlapping_ghost = false
+	for area in placement_area_detector.get_overlapping_areas():
+		if area == self:
+			continue
+		if area.is_in_group("placement_area"):
+			in_placement_area = true
+		elif area is GhostBase and (area as GhostBase).is_placed:
+			overlapping_ghost = true
 	can_place = in_placement_area and not overlapping_ghost
 
-func _on_area_exited(area: Area2D) -> void:
-	if area is GhostBase:
-		overlapping_ghost = false
-	if area.is_in_group("placement_area"):
-		in_placement_area = false
-	can_place = in_placement_area and not overlapping_ghost
-	
+func _on_area_entered(_area: Area2D) -> void:
+	_refresh_can_place()
+
+func _on_area_exited(_area: Area2D) -> void:
+	_refresh_can_place()
+
 # stun effect to the ghost for a specific duration
 func apply_disable(duration: float) -> void:
 	disable_timer = duration
@@ -188,12 +217,22 @@ func _play_attack_animation() -> void: #inherit attack animation masing2 hantu
 func _on_attack_animation_finished() -> void: #inherit stop animasi saat musuh defeated
 	pass
 
+# ── Damage modifiers ────
+func get_effective_damage() -> float:
+	var multiplier := 1.0
+	for m in _damage_multipliers:
+		multiplier = maxf(multiplier, m) # strongest active multiplier wins, no stacking
+	return fear_damage * multiplier + _flat_damage_bonus
+
 # FUNCTION TO RECEIVE BUFF FROM ROOM INTERACTION
 func apply_damage_buff(multiplier: float, duration: float) -> void:
-	is_buffed = true
-	fear_damage = original_fear_damage * multiplier
-	
+	_damage_multipliers.append(multiplier)
 	await get_tree().create_timer(duration).timeout
-	
-	fear_damage = original_fear_damage
-	is_buffed = false
+	_damage_multipliers.erase(multiplier)
+
+# Flat bonus (e.g. Tuyul's Steal). Caller is responsible for removing it.
+func add_damage_bonus(amount: float) -> void:
+	_flat_damage_bonus += amount
+
+func remove_damage_bonus(amount: float) -> void:
+	_flat_damage_bonus = maxf(_flat_damage_bonus - amount, 0.0)

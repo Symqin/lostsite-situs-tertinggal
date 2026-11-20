@@ -1,6 +1,10 @@
 extends EnemyBase
 class_name Dukun
 
+const STUN_RANGE: float = 250.0
+const STUN_DURATION: float = 2.0
+const STUN_COOLDOWN: float = 20.0
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	#Test the inheritence (Remove later)
@@ -34,7 +38,7 @@ func take_fear_damage(amount: int, damage_source: String = "ghost") -> void:
 
 # Active Skill: Area of Effect (AoE) Stun
 func cast_disable_skill() -> void:
-	var skill_range: float = 250.0 
+	var skill_range: float = STUN_RANGE
 	var has_casted: bool = false
 	
 	# Scan for all ghosts currently placed on the map
@@ -44,12 +48,12 @@ func cast_disable_skill() -> void:
 			
 			if distance <= skill_range:
 				if node.has_method("apply_disable"):
-					node.apply_disable(2.0)
+					node.apply_disable(STUN_DURATION)
 					print(name, " casted a 2-second stun on: ", node.name)
 					has_casted = true
 				
 	# Reset the cooldown if AT LEAST ONE ghost is successfully stunned
 	if has_casted:
-		skill_cooldown_timer = 20.0 
+		skill_cooldown_timer = STUN_COOLDOWN
 	else:
 		skill_cooldown_timer = 0.5

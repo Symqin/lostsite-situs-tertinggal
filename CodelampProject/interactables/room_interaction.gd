@@ -9,6 +9,11 @@ var cost_bisikan: int = 20
 var cooldown_bisikan: float = 8.0
 var is_bisikan_ready: bool = true
 
+const LAMP_DAMAGE_MULTIPLIER: float = 1.5
+const LAMP_DURATION: float = 5.0
+const WHISPER_FEAR_DAMAGE: int = 10
+const WHISPER_STUN_DURATION: float = 1.5
+
 @onready var dark_effect: ColorRect = $DarkEffect
 
 # --- Lamp Button Nodes ---
@@ -52,6 +57,10 @@ func _ready() -> void:
 	_set_bisikan_state_ready()
 	_start_idle_pulse_bisikan()
 
+	# Hover hints so players know what each room button does
+	btn_lampu.tooltip_text = GuideData.lamp_tooltip()
+	btn_bisikan.tooltip_text = GuideData.whisper_tooltip()
+
 # ENERGY TRACKER FUNCTION
 func _spend_energy(amount: int) -> bool:
 	var main_node = get_tree().current_scene
@@ -84,8 +93,8 @@ func _efek_matikan_lampu() -> void:
 	var targets = get_overlapping_areas() 
 	for target in targets:
 		if target.is_in_group("ghost") and target.has_method("apply_damage_buff"):
-			target.apply_damage_buff(1.5, 5.0) 
-	await get_tree().create_timer(5.0).timeout
+			target.apply_damage_buff(LAMP_DAMAGE_MULTIPLIER, LAMP_DURATION)
+	await get_tree().create_timer(LAMP_DURATION).timeout
 	dark_effect.hide()
 
 func _start_cooldown_lampu() -> void:
@@ -161,9 +170,9 @@ func _efek_bisikan() -> void:
 	for target in targets:
 		if target.is_in_group("enemy"):
 			if target.has_method("take_fear_damage"):
-				target.take_fear_damage(10, "room")
+				target.take_fear_damage(WHISPER_FEAR_DAMAGE, "room")
 			if target.has_method("apply_stun"):
-				target.apply_stun(1.5)
+				target.apply_stun(WHISPER_STUN_DURATION)
 
 func _start_cooldown_bisikan() -> void:
 	is_bisikan_ready = false

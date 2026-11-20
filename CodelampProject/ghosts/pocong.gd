@@ -5,12 +5,14 @@ const STOMP_RANGE: float = 240.0
 const STOMP_MAX_TARGETS: int = 4
 const STOMP_FEAR_DAMAGE: float = 35.0
 const STOMP_PUSH_STEPS: int = 2
+const ABILITY_FIRST_COOLDOWN: float = 10.0
+const ABILITY_COOLDOWN: float = 90.0
 
 func _ready() -> void:
 	name = "Pocong"
 	ability_name = "Haunted Stomp"
-	ability_start_cooldown = 10.0
-	ability_cooldown = 90.0
+	ability_start_cooldown = ABILITY_FIRST_COOLDOWN
+	ability_cooldown = ABILITY_COOLDOWN
 	super._ready()
 	print("%s, %s, %s, %s, %s" % [fear_damage, attack_rate, cost, cost_upgrade, cost_move])
 	anim_sprite.play("idle")

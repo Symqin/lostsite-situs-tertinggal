@@ -33,11 +33,15 @@ var _is_preparing: bool = true
 var _last_spawn_time_in_wave: float = 0.0
 var _spawn_time_slot_counts: Dictionary = {}
 var _spawn_counter: int = 0
+var _game_over: bool = false
 const SPAWN_FORMATION_COLUMNS: int = 3
 const SPAWN_FORMATION_SPACING: float = 22.0
 
 # ── Spawn Timer ────
 var _spawn_timer: Timer
+
+# ── Player Guide ────
+@onready var _help_panel: HelpPanel = get_node_or_null("HelpPanel")
 
 # ── Signals ────
 signal wave_started(wave_index: int)
@@ -143,8 +147,17 @@ func _ready() -> void:
 		_kuntilanak_ability_button.pressed.connect(_on_kuntilanak_ability_button_pressed)
 	if _tuyul_ability_button and not _tuyul_ability_button.pressed.is_connected(_on_tuyul_ability_button_pressed):
 		_tuyul_ability_button.pressed.connect(_on_tuyul_ability_button_pressed)
+	_set_ability_tooltips()
 	_update_terror_energy_label()
 	_update_wave_button()
+
+func _set_ability_tooltips() -> void:
+	if _pocong_ability_button:
+		_pocong_ability_button.tooltip_text = GuideData.ability_tooltip("pocong")
+	if _kuntilanak_ability_button:
+		_kuntilanak_ability_button.tooltip_text = GuideData.ability_tooltip("kuntilanak")
+	if _tuyul_ability_button:
+		_tuyul_ability_button.tooltip_text = GuideData.ability_tooltip("tuyul")
 
 func _physics_process(delta: float) -> void:
 	if _tuyul_bonus_time_left > 0.0:
@@ -194,6 +207,7 @@ func start_next_wave() -> void:
 
 	var wave_data: WaveData = waves[_current_wave_index]
 	_build_spawn_queue(wave_data)
+	_announce_new_enemies(wave_data)
 	if _spawn_queue.is_empty():
 		printerr("Wave %d has no valid spawn entries!" % (_current_wave_index + 1))
 		return
@@ -381,6 +395,8 @@ func _update_terror_energy_label() -> void:
 # ── Called when an enemy is removed from the scene ────
 func _on_enemy_removed() -> void:
 	_active_enemies -= 1
+	if _game_over:
+		return
 	
 	# Wave is cleared when all spawned enemies are gone and queue is empty
 	if _active_enemies <= 0 and _spawn_queue.is_empty() and _wave_in_progress:
@@ -397,11 +413,10 @@ func _on_enemy_removed() -> void:
 		else:
 			_update_wave_button()
 
-func _on_kuntianak_button_pressed() -> void:
-	pass # Replace with function body.
-
 # ── Victory Condition ─────────────────────────────────────────
 func trigger_victory() -> void:
+	if _game_over:
+		return
 	print("LEVEL CLEARED! Kemenangan Diraih!")
 	
 	# Pastikan sinyal ini ada di deklarasi signal di atas ya, kalau belum ada tambahkan: signal all_waves_cleared
@@ -421,6 +436,8 @@ func trigger_victory() -> void:
 # ── GameOver ────
 func _on_player_core_destroyed() -> void:
 	print("Sinyal Core Hancur diterima oleh Main!")
+	_game_over = true
+	_spawn_queue.clear()
 
 	if _spawn_timer:
 		_spawn_timer.stop()
@@ -432,6 +449,14 @@ func _on_player_core_destroyed() -> void:
 			_game_over_ui.visible = true
 		get_tree().paused = true
 
-
-func _on_victory_ui_visibility_changed() -> void:
-	pass # Replace with function body.
+# ── Player Guide: introduce enemy types the first time they appear ────
+func _announce_new_enemies(wave_data: WaveData) -> void:
+	if not _help_panel:
+		return
+	var announced: Dictionary = {}
+	for entry: SpawnEntry in wave_data.spawn_schedule:
+		if entry.count <= 0 or announced.has(entry.enemy_type):
+			continue
+		announced[entry.enemy_type] = true
+		if GameManager.mark_enemy_seen(entry.enemy_type):
+			_help_panel.announce_enemy(entry.enemy_type)

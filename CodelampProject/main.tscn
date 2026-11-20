@@ -13,6 +13,9 @@
 [ext_resource type="PackedScene" uid="uid://bd2gcpkqobb3y" path="res://ui/victory_ui/victoryui.tscn" id="10_dg77c"]
 [ext_resource type="PackedScene" uid="uid://enu8y70b6r57" path="res://ui/top_hud/top_hud.tscn" id="10_top_hud"]
 [ext_resource type="Texture2D" uid="uid://c0t7xieoxlh1d" path="res://ui/top_hud/asset/Energy_Terror.png" id="11_ycdy4"]
+[ext_resource type="Script" path="res://ui/help/help_panel.gd" id="12_help"]
+[ext_resource type="Script" path="res://ui/help/info_button.gd" id="13_info"]
+[ext_resource type="Script" path="res://ui/help/placement_hints.gd" id="14_hints"]
 
 [node name="Main" type="Node2D" unique_id=1858161533]
 script = ExtResource("1_main")
@@ -22,6 +25,9 @@ script = ExtResource("1_main")
 [node name="EnemyContainer" type="Node2D" parent="." unique_id=1911630442]
 
 [node name="LevelContainer" type="Node2D" parent="." unique_id=197449280]
+
+[node name="PlacementHints" type="Node2D" parent="." unique_id=1402266981]
+script = ExtResource("14_hints")
 
 [node name="Ghosts" type="Node2D" parent="." unique_id=2022774454]
 
@@ -63,6 +69,7 @@ theme_override_fonts/font = ExtResource("3_dg77c")
 theme_override_font_sizes/font_size = 13
 disabled = true
 text = "Haunted Stomp"
+script = ExtResource("13_info")
 
 [node name="PocongCooldownLabel" type="Label" parent="GhostSelectUI/MarginContainer/VBoxContainer/AbilityButtons/PocongAbilityGroup" unique_id=1894657201]
 layout_mode = 2
@@ -80,6 +87,7 @@ theme_override_fonts/font = ExtResource("3_dg77c")
 theme_override_font_sizes/font_size = 13
 disabled = true
 text = "Dreadful Scream"
+script = ExtResource("13_info")
 
 [node name="KuntilanakCooldownLabel" type="Label" parent="GhostSelectUI/MarginContainer/VBoxContainer/AbilityButtons/KuntilanakAbilityGroup" unique_id=1463892745]
 layout_mode = 2
@@ -97,6 +105,7 @@ theme_override_fonts/font = ExtResource("3_dg77c")
 theme_override_font_sizes/font_size = 13
 disabled = true
 text = "Steal"
+script = ExtResource("13_info")
 
 [node name="TuyulCooldownLabel" type="Label" parent="GhostSelectUI/MarginContainer/VBoxContainer/AbilityButtons/TuyulAbilityGroup" unique_id=1169273408]
 layout_mode = 2
@@ -194,7 +203,8 @@ visible = false
 [node name="GameOverUI" parent="." unique_id=2061512220 instance=ExtResource("2_gameover")]
 visible = false
 
+[node name="HelpPanel" type="CanvasLayer" parent="." unique_id=1311725577]
+script = ExtResource("12_help")
+
 [node name="SpawnTimer" type="Timer" parent="." unique_id=725130102]
 
-[connection signal="visibility_changed" from="VictoryUI" to="." method="_on_victory_ui_visibility_changed"]
-[connection signal="visibility_changed" from="GameOverUI" to="." method="_on_game_over_ui_visibility_changed"]

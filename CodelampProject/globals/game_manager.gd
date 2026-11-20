@@ -34,3 +34,27 @@ func is_last_level() -> bool:
 
 func reset() -> void:
 	current_level_index = 0
+
+# ── Player Guide progress ────
+# Stored in user:// so the full guide only auto-opens on the very first play.
+const GUIDE_SAVE_PATH := "user://guide.cfg"
+var _seen_enemy_types: Dictionary = {}
+
+# Returns true the first time an enemy type is seen this session.
+func mark_enemy_seen(enemy_type: int) -> bool:
+	if _seen_enemy_types.has(enemy_type):
+		return false
+	_seen_enemy_types[enemy_type] = true
+	return true
+
+func has_seen_guide() -> bool:
+	var cfg := ConfigFile.new()
+	if cfg.load(GUIDE_SAVE_PATH) != OK:
+		return false
+	return bool(cfg.get_value("guide", "seen", false))
+
+func mark_guide_seen() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(GUIDE_SAVE_PATH)
+	cfg.set_value("guide", "seen", true)
+	cfg.save(GUIDE_SAVE_PATH)
