@@ -111,6 +111,9 @@ func trigger_flee() -> void:
 	if not _defeat_reward_emitted:
 		_defeat_reward_emitted = true
 		defeated.emit(terror_energy)
+		# Startled gasp, then footsteps running away
+		AudioManager.play_event("enemy_flee")
+		AudioManager.play_event("enemy_run")
 	is_fleeing = true
 	current_fear_bar = 0
 	

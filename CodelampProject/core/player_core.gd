@@ -28,6 +28,7 @@ func _on_body_entered(body: Node2D) -> void:
 			
 		# Update UI Label
 		_update_hp_display()
+		AudioManager.play_event("core_hit")
 			
 		print("Core damaged! Current HP: ", current_hp)
 		

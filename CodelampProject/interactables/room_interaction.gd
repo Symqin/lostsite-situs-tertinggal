@@ -83,6 +83,7 @@ func _on_lamp_button_pressed() -> void:
 	if not is_lampu_ready: return
 	if _spend_energy(cost_lampu):
 		print("Lamp triggered! Energy reduced by 30.")
+		AudioManager.play_event("lamp")
 		_efek_matikan_lampu()
 		_start_cooldown_lampu()
 	else:
@@ -160,6 +161,7 @@ func _on_whisper_button_pressed() -> void:
 	if not is_bisikan_ready: return
 	if _spend_energy(cost_bisikan):
 		print("Whisper triggered! Energy reduced by 20.")
+		AudioManager.play_event("whisper")
 		_efek_bisikan()
 		_start_cooldown_bisikan()
 	else:

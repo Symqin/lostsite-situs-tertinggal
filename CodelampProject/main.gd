@@ -220,6 +220,7 @@ func start_next_wave() -> void:
 	_update_wave_button()
 
 	emit_signal("wave_started", _current_wave_index)
+	AudioManager.play_event("wave_start")
 	print("Wave %d started!" % (_current_wave_index + 1))
 
 # ── Build flat spawn queue from wave enemy list ────
@@ -411,6 +412,7 @@ func _on_enemy_removed() -> void:
 		if _current_wave_index >= waves.size():
 			trigger_victory()
 		else:
+			AudioManager.play_event("wave_clear")
 			_update_wave_button()
 
 # ── Victory Condition ─────────────────────────────────────────
@@ -418,6 +420,7 @@ func trigger_victory() -> void:
 	if _game_over:
 		return
 	print("LEVEL CLEARED! Kemenangan Diraih!")
+	AudioManager.play_event("victory")
 	
 	# Pastikan sinyal ini ada di deklarasi signal di atas ya, kalau belum ada tambahkan: signal all_waves_cleared
 	emit_signal("all_waves_cleared") 
@@ -438,6 +441,7 @@ func _on_player_core_destroyed() -> void:
 	print("Sinyal Core Hancur diterima oleh Main!")
 	_game_over = true
 	_spawn_queue.clear()
+	AudioManager.play_event("game_over")
 
 	if _spawn_timer:
 		_spawn_timer.stop()

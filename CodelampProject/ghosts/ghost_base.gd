@@ -12,6 +12,8 @@ class_name GhostBase
 @onready var placement_area_detector: Area2D = $PlacementAreaDetector
 
 const RANGE_COLOR := Color(0.62, 0.85, 1.0) # spirit blue, matches PlacementHints
+# Same attack sample for every ghost, pitched so each one has its own voice
+const ATTACK_PITCH := {"pocong": 1.15, "kuntilanak": 0.8, "tuyul": 1.4}
 
 var dragging : bool = false
 var drag_offset: Vector2 = Vector2.ZERO
@@ -97,6 +99,7 @@ func _process(delta: float) -> void:
 			#attack
 			if attack_cooldown <= 0.0:
 				target.take_fear_damage(roundi(get_effective_damage()), id)
+				AudioManager.play_event("ghost_attack", ATTACK_PITCH.get(id, 1.0))
 				attack_cooldown = attack_rate
 				_play_attack_animation()
 		else:
@@ -126,24 +129,32 @@ func _input_event(viewport: Viewport, event: InputEvent, _shape_idx: int) -> voi
 #Tries to place ghost
 func place_ghost() -> void:
 	_refresh_can_place()
+	var moved := global_position.distance_to(last_valid_position) > 1.0
 	if !can_place:
 		if is_placed:
 			global_position = last_valid_position
+			if moved:
+				AudioManager.playsfx_cancel()
 		else:
+			AudioManager.playsfx_cancel()
 			queue_free()
 		return
 	var main_node := get_tree().current_scene
 	if not is_placed:
 		if main_node and main_node.has_method("try_spend_terror_energy"):
 			if not main_node.try_spend_terror_energy(cost):
+				AudioManager.playsfx_cancel()
 				queue_free()
 				return
-	elif global_position.distance_to(last_valid_position) > 1.0:
+		AudioManager.play_event("placement")
+	elif moved:
 		# Moving an already placed ghost costs cost_move.
 		if main_node and main_node.has_method("try_spend_terror_energy"):
 			if not main_node.try_spend_terror_energy(cost_move):
+				AudioManager.playsfx_cancel()
 				global_position = last_valid_position
 				return
+		AudioManager.play_event("placement")
 	is_placed = true
 	anim_sprite.play("idle")
 	last_valid_position = global_position
@@ -198,6 +209,7 @@ func try_activate_ability() -> bool:
 	var activated := _activate_ability()
 	if not activated:
 		return false
+	AudioManager.play_event("ability_" + id)
 	if _ability_has_been_used:
 		ability_current_cooldown = ability_cooldown
 	else:

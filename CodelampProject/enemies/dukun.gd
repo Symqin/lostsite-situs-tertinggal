@@ -54,6 +54,7 @@ func cast_disable_skill() -> void:
 				
 	# Reset the cooldown if AT LEAST ONE ghost is successfully stunned
 	if has_casted:
+		AudioManager.play_event("dukun_stun")
 		skill_cooldown_timer = STUN_COOLDOWN
 	else:
 		skill_cooldown_timer = 0.5

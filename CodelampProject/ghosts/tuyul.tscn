@@ -168,7 +168,7 @@ fear_damage = 5.0
 attack_rate = 2.0
 cost = 30
 cost_upgrade = 40
-cost_move = 15
+cost_move = 10
 
 [node name="Sprite2D" type="Sprite2D" parent="." index="1" unique_id=2067866297]
 
