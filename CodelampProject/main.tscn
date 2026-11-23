@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://ui/help/help_panel.gd" id="12_help"]
 [ext_resource type="Script" path="res://ui/help/info_button.gd" id="13_info"]
 [ext_resource type="Script" path="res://ui/help/placement_hints.gd" id="14_hints"]
+[ext_resource type="Script" path="res://ui/pause/pause_menu.gd" id="15_pause"]
 
 [node name="Main" type="Node2D" unique_id=1858161533]
 script = ExtResource("1_main")
@@ -30,6 +31,8 @@ script = ExtResource("1_main")
 script = ExtResource("14_hints")
 
 [node name="Ghosts" type="Node2D" parent="." unique_id=2022774454]
+
+[node name="VfxLayer" type="Node2D" parent="." unique_id=1730496251]
 
 [node name="GhostSelectUI" type="CanvasLayer" parent="." unique_id=1929039526]
 layer = 0
@@ -205,6 +208,9 @@ visible = false
 
 [node name="HelpPanel" type="CanvasLayer" parent="." unique_id=1311725577]
 script = ExtResource("12_help")
+
+[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1586230417]
+script = ExtResource("15_pause")
 
 [node name="SpawnTimer" type="Timer" parent="." unique_id=725130102]
 

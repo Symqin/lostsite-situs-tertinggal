@@ -35,6 +35,8 @@ func _activate_ability() -> bool:
 	var hit_count: int = mini(STOMP_MAX_TARGETS, enemies_in_range.size())
 	if hit_count <= 0:
 		return false
+	Vfx.shockwave(global_position, STOMP_RANGE, Vfx.PALE, 0.0, 8.0)
+	Vfx.screen_shake(7.0, 0.25)
 	for i in range(hit_count):
 		var enemy := enemies_in_range[i]
 		enemy.stumble_back(STOMP_PUSH_STEPS)

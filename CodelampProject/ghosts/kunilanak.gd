@@ -19,6 +19,9 @@ func _ready() -> void:
 
 func _activate_ability() -> bool:
 	var hit_any := false
+	# Three ripples of sound spreading out from the Kuntilanak
+	for i in 3:
+		Vfx.shockwave(global_position, SCREAM_RANGE, Vfx.BLOOD, i * 0.12, 6.0)
 	for node in get_tree().get_nodes_in_group("enemy"):
 		if node is EnemyBase:
 			var enemy := node as EnemyBase

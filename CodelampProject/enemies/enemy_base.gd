@@ -98,9 +98,17 @@ func take_fear_damage(amount: int, damage_source: String = "ghost") -> void:
 	if current_fear_bar < 0:
 		current_fear_bar = 0
 		
-	# Update the UI Fear Bar after taking damage
+	# Update the UI Fear Bar after taking damage (smoothly)
 	if fear_bar_ui:
-		fear_bar_ui.value = current_fear_bar
+		fear_bar_ui.create_tween().tween_property(fear_bar_ui, "value", float(current_fear_bar), 0.15)
+
+	# Hit feedback: blink, shake, sparks and a floating number
+	if amount > 0:
+		var hit_color := Vfx.color_for(damage_source)
+		Vfx.flash(sprite)
+		Vfx.jitter(sprite)
+		Vfx.hit_burst(global_position, hit_color, 0.8)
+		Vfx.float_text(global_position, str(amount), hit_color, 24)
 		
 	print(name, " received ", amount, " Fear Damage from ", damage_source, "! Remaining Mental HP: ", current_fear_bar)
 	if current_fear_bar <= 0:
@@ -112,6 +120,9 @@ func trigger_flee() -> void:
 		_defeat_reward_emitted = true
 		defeated.emit(terror_energy)
 		# Startled gasp, then footsteps running away
+		Vfx.hit_burst(global_position, Vfx.SPIRIT, 1.6)
+		Vfx.float_text(global_position + Vector2(0, -18), "!", Color.WHITE, 46, 26.0)
+		Vfx.float_text(global_position + Vector2(22, 6), "+%d" % terror_energy, Vfx.SPIRIT, 26, 60.0)
 		AudioManager.play_event("enemy_flee")
 		AudioManager.play_event("enemy_run")
 	is_fleeing = true

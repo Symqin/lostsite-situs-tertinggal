@@ -28,6 +28,10 @@ func _activate_ability() -> bool:
 				buffed_ghosts.append(ghost)
 	if buffed_ghosts.is_empty():
 		return false
+	Vfx.shockwave(global_position, STEAL_RANGE, Vfx.GOLD, 0.0, 4.0)
+	for ghost in buffed_ghosts:
+		Vfx.hit_burst(ghost.global_position, Vfx.GOLD, 1.2)
+		Vfx.float_text(ghost.global_position, "+%d" % int(STEAL_BONUS_DAMAGE), Vfx.GOLD, 24)
 	var enemy_count := get_tree().get_nodes_in_group("enemy").size()
 	var main_node := get_tree().current_scene
 	if main_node and main_node.has_method("start_tuyul_steal_bonus"):

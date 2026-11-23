@@ -42,9 +42,12 @@ var is_buffed: bool:
 	get: return not _damage_multipliers.is_empty()
 
 var _hovered: bool = false
+var _sprite_base_scale: Vector2 = Vector2.ONE
 
 func _ready():
 	add_to_group("ghost")
+	if anim_sprite:
+		_sprite_base_scale = anim_sprite.scale
 	#Set original position
 	original_position = global_position
 	last_valid_position = global_position
@@ -98,7 +101,14 @@ func _process(delta: float) -> void:
 			rotation_degrees -= 90
 			#attack
 			if attack_cooldown <= 0.0:
-				target.take_fear_damage(roundi(get_effective_damage()), id)
+				# Fear lands when the spirit orb reaches the visitor, so hits read clearly
+				var damage := roundi(get_effective_damage())
+				var source := id
+				var victim := target
+				Vfx.projectile(global_position, victim, Vfx.color_for(id), func():
+					if is_instance_valid(victim):
+						victim.take_fear_damage(damage, source))
+				Vfx.punch(anim_sprite, _sprite_base_scale)
 				AudioManager.play_event("ghost_attack", ATTACK_PITCH.get(id, 1.0))
 				attack_cooldown = attack_rate
 				_play_attack_animation()
@@ -197,6 +207,8 @@ func _on_area_exited(_area: Area2D) -> void:
 # stun effect to the ghost for a specific duration
 func apply_disable(duration: float) -> void:
 	disable_timer = duration
+	Vfx.hit_burst(global_position, Color(0.55, 0.65, 1.0), 1.3)
+	Vfx.flash(anim_sprite, Color(0.6, 0.7, 1.0), 0.3)
 
 func can_activate_ability() -> bool:
 	if not is_placed:

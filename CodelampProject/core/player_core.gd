@@ -29,6 +29,10 @@ func _on_body_entered(body: Node2D) -> void:
 		# Update UI Label
 		_update_hp_display()
 		AudioManager.play_event("core_hit")
+		Vfx.screen_shake(10.0, 0.3)
+		Vfx.screen_flash()
+		Vfx.hit_burst(global_position, Vfx.BLOOD, 2.2)
+		Vfx.float_text(global_position, "-%d" % (body.core_damage if "core_damage" in body else 10), Vfx.BLOOD, 34)
 			
 		print("Core damaged! Current HP: ", current_hp)
 		
